@@ -32,7 +32,7 @@ const (
 	defaultNonStreamingChannelSize = 10
 	// n8n workflows can involve multiple external API calls and AI model invocations,
 	// so a generous default timeout is used to avoid premature cancellation.
-	defaultHTTPTimeout    = time.Hour
+	defaultHTTPTimeout  = time.Hour
 	maxResponseBodySize = 1 << 20 // 1MB limit for response body reads
 )
 
@@ -47,7 +47,7 @@ type N8nAgent struct {
 	responseConverter    ResponseConverter
 	streamingBufSize     int
 	streamingRespHandler StreamingRespHandler
-	enableStreaming       *bool
+	enableStreaming      *bool
 	httpClient           *http.Client
 	getHTTPClientFunc    func(*agent.Invocation) (*http.Client, error)
 	transferStateKey     []string
