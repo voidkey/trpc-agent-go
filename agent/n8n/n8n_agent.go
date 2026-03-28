@@ -124,7 +124,14 @@ func (a *N8nAgent) shouldUseStreaming(invocation *agent.Invocation) bool {
 
 func (a *N8nAgent) getHTTPClient(invocation *agent.Invocation) (*http.Client, error) {
 	if a.getHTTPClientFunc != nil {
-		return a.getHTTPClientFunc(invocation)
+		client, err := a.getHTTPClientFunc(invocation)
+		if err != nil {
+			return nil, err
+		}
+		if client == nil {
+			return nil, fmt.Errorf("getHTTPClientFunc returned nil client")
+		}
+		return client, nil
 	}
 	return a.httpClient, nil
 }
@@ -148,7 +155,13 @@ func (a *N8nAgent) buildHTTPRequest(
 	}
 
 	if len(a.transferStateKey) > 0 {
-		inputs, _ := body["inputs"].(map[string]any)
+		var inputs map[string]any
+		if existing, ok := body["inputs"]; ok {
+			inputs, ok = existing.(map[string]any)
+			if !ok {
+				return nil, fmt.Errorf("body[\"inputs\"] has unexpected type %T, expected map[string]any", existing)
+			}
+		}
 		if inputs == nil {
 			inputs = map[string]any{}
 		}
@@ -360,6 +373,9 @@ func (a *N8nAgent) runStreaming(
 				if a.streamingRespHandler != nil {
 					content, err := a.streamingRespHandler(evt.Response)
 					if err != nil {
+						// Handler error is treated as fatal: partial aggregated content is
+						// intentionally discarded because the handler may have encountered
+						// malformed data, making the accumulated content unreliable.
 						a.sendErrorEvent(ctx, eventChan, invocation,
 							fmt.Sprintf("streaming resp handler failed: %v", err))
 						return
