@@ -88,6 +88,9 @@ func (d *defaultRequestConverter) ConvertToN8nRequest(
 	}
 	req["user"] = user
 
+	// NOTE: Only the last image/file is kept when multiple are present,
+	// because n8n webhook uses a flat key-value format that doesn't support arrays.
+	// Users needing multi-file support should implement a custom RequestConverter.
 	for _, contentPart := range invocation.Message.ContentParts {
 		switch contentPart.Type {
 		case model.ContentTypeText:

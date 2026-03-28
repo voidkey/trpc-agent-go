@@ -341,10 +341,12 @@ func (a *N8nAgent) runStreaming(
 			}
 
 			line = strings.TrimSpace(line)
-			if line == "" || !strings.HasPrefix(line, "data: ") {
+			if line == "" || !strings.HasPrefix(line, "data:") {
 				continue
 			}
-			data := strings.TrimPrefix(line, "data: ")
+			// Per SSE spec, if the value starts with a space, remove it (exactly one).
+			data := strings.TrimPrefix(line, "data:")
+			data = strings.TrimPrefix(data, " ")
 			if data == "[DONE]" {
 				break
 			}

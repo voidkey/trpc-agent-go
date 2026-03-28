@@ -14,6 +14,7 @@ import (
 	"fmt"
 	"net/http"
 	"testing"
+	"time"
 
 	"trpc.group/trpc-go/trpc-agent-go/agent"
 	"trpc.group/trpc-go/trpc-agent-go/event"
@@ -847,15 +848,15 @@ func TestN8nAgent_Run_Streaming_ContextCancellation(t *testing.T) {
 	mockServer := NewMockN8nServer()
 	defer mockServer.Close()
 
-	// Use slow streaming events to give time for cancellation
-	mockServer.WithStreamingEvents([]string{
+	// Use per-event delay so cancellation can take effect between events.
+	mockServer.WithStreamingEventsDelay([]string{
 		`data: {"output": "chunk1"}`,
 		`data: {"output": "chunk2"}`,
 		`data: {"output": "chunk3"}`,
 		`data: {"output": "chunk4"}`,
 		`data: {"output": "chunk5"}`,
 		`data: [DONE]`,
-	})
+	}, 50*time.Millisecond)
 
 	a := createMockN8nAgent(t, mockServer, WithEnableStreaming(true))
 
@@ -882,10 +883,10 @@ func TestN8nAgent_Run_Streaming_ContextCancellation(t *testing.T) {
 		}
 	}
 
-	// Channel should close without processing all events
-	// The exact count depends on timing, but it should be less than all chunks + final
-	if count > 6 {
-		t.Errorf("expected early termination, got %d events", count)
+	// With per-event delay and cancellation after the first event,
+	// we should get fewer events than the full set (5 chunks + 1 final = 6).
+	if count >= 6 {
+		t.Errorf("expected early termination, got %d events (full set is 6)", count)
 	}
 }
 

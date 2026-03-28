@@ -15,6 +15,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 )
 
 // MockN8nServer provides a mock n8n webhook server for testing.
@@ -152,6 +153,31 @@ func (m *MockN8nServer) WithStreamingEvents(events []string) {
 		}
 
 		for _, event := range events {
+			w.Write([]byte(event + "\n\n"))
+			flusher.Flush()
+		}
+	}
+}
+
+// WithStreamingEventsDelay overrides the handler to return custom SSE events with a delay between each event.
+func (m *MockN8nServer) WithStreamingEventsDelay(events []string, delay time.Duration) {
+	m.WebhookHandler = func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/event-stream")
+		w.Header().Set("Cache-Control", "no-cache")
+		w.Header().Set("Connection", "keep-alive")
+
+		flusher, ok := w.(http.Flusher)
+		if !ok {
+			http.Error(w, "Streaming unsupported", http.StatusInternalServerError)
+			return
+		}
+
+		for _, event := range events {
+			select {
+			case <-r.Context().Done():
+				return
+			case <-time.After(delay):
+			}
 			w.Write([]byte(event + "\n\n"))
 			flusher.Flush()
 		}

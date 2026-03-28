@@ -20,6 +20,7 @@ Examples demonstrating how to use the n8n agent with trpc-agent-go.
 ### Basic Chat (Non-Streaming)
 
 ```bash
+cd examples/n8n
 export N8N_WEBHOOK_URL="https://your-n8n-instance.com/webhook/your-webhook-id"
 go run ./basic_chat/
 ```
@@ -27,6 +28,7 @@ go run ./basic_chat/
 ### Streaming Chat
 
 ```bash
+cd examples/n8n
 export N8N_WEBHOOK_URL="https://your-n8n-instance.com/webhook/your-webhook-id"
 go run ./streaming_chat/
 ```
